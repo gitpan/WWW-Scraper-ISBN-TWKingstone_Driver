@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION @ISA);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 #--------------------------------------------------------------------------
 
@@ -33,14 +33,13 @@ Searches for book information from the TWKingstone's online catalog.
 use WWW::Scraper::ISBN::Driver;
 use WWW::Mechanize;
 use Template::Extract;
-
-use Data::Dumper;
+use Text::Iconv;
 
 ###########################################################################
 #Constants                                                                #
 ###########################################################################
 
-use constant	QUERY	=> 'http://search.kingstone.com.tw/search/searcher.exe?p=&p2=&p3=&p4=&p5=&p9=%s&h=0&l=0&o=&a=15&f=0&t=0&q=&e=&n=&s=1&r=1&z=1&fileaut=&filename=&filetype=&rel_start=1&rel_num=10&sim_start=1&sim_num=10&property=&property=&partner=';
+use constant	QUERY	=> 'http://search.kingstone.com.tw/Result.asp?SE_Type=ISBN&k=%s';
 
 #--------------------------------------------------------------------------
 
@@ -96,7 +95,9 @@ sub search {
 
 	# The Search Results page
 	my $template = <<END;
-眤┮穓碝戈琩掸计Τ[% ... %]<a class=inside href="[% book %]">
+<form name="form1" [% ... %]
+<span class="font09">[% ... %]
+<a href="[% book_link %]&
 END
 
 	my $extract = Template::Extract->new;
@@ -105,32 +106,36 @@ END
 	return $self->handler("Could not extract data from TWKingstone result page.")
 		unless(defined $data);
 
-	my $book = $data->{book};
-	$mechanize->get($book);
+	my $book_link = $data->{book_link};
+	$mechanize->get($book_link);
+
+	my $content = $mechanize->content();
+	$content =~ /(table width="980" border="0" align="center" .*form name="form2")/s;
+	$content = Text::Iconv->new("utf-8", "big5")->convert($1);
 
 	$template = <<END;
-膟膀セ[% ... %]
-<img src='[% image_link %]'[% ... %]alt='[% title %]'[% ... %]
-[% ... %]property=">[% author %]</a>[% ... %]
-[% ... %]property=">[% publisher %]</a>[% ... %]
-ISBN:[% ... %]">[% isbn %]</td>[% ... %]
-ら[% ... %]">[% pubdate %]</td>[% ... %]
-﹚基[% ... %]">[% price_list %]</font>[% ... %]
-疭磃基[% ... %]color:#CC0000;><b>[% price_sell %]</b>
+<img src="[% image_link %]" [% ... %]
+<span class="font01">[% title %]</span>[% ... %]
+[% ... %]>[% author %]</a>[% ... %]
+[% ... %]>[% publisher %]</a>[% ... %]
+ISBN[% isbn %]<br>[% ... %]
+ら[% pubdate %]</td>[% ... %]
+﹚基[% price_list %] じ<br>[% ... %]
+疭基<[% ... %] <span class="font01">[% price_sell %]</span>じ
 END
 
-	$data = $extract->extract($template, $mechanize->content());
+	$data = $extract->extract($template, $content);
 
 	return $self->handler("Could not extract data from TWKingstone result page.")
 		unless(defined $data);
 
-	$data->{publisher} =~ s/ *$//;
+	$data->{pubdate} =~ s/[ \n\r\t]*//g;
 
 	my $bk = {
 		'isbn'		=> $data->{isbn},
 		'title'		=> $data->{title},
 		'author'	=> $data->{author},
-		'book_link'	=> $book,
+		'book_link'	=> $book_link,
 		'image_link'	=> "http://www.kingstone.com.tw".$data->{image_link},
 		'pubdate'	=> $data->{pubdate},
 		'publisher'	=> $data->{publisher},

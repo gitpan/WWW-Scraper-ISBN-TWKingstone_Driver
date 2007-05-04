@@ -23,11 +23,11 @@ SKIP: {
 
 	my $book = $record->book;
 	is($book->{'isbn'}, '9864175351');
-	is($book->{'title'}, '藍海策略-開創無人競爭的全新市場');
+	is($book->{'title'}, '藍海策略');
 	is($book->{'author'}, '金偉燦 / 莫伯尼');
-	is($book->{'book_link'}, 'http://WWW.KINGSTONE.COM.TW/product.asp?ActID=tornado&ID=2024960224052');
+	is($book->{'book_link'}, 'http://www.kingstone.com.tw/book/book_page.asp?kmcode=2024960224052');
 	is($book->{'image_link'}, 'http://www.kingstone.com.tw/Book/images/Product/20249/2024960224052/2024960224052b.jpg');
-	is($book->{'pubdate'}, '94年07月29日');
+	is($book->{'pubdate'}, '2005.07.29');
 	is($book->{'publisher'}, '天下文化');
 	is($book->{'price_list'}, '450');
 }
